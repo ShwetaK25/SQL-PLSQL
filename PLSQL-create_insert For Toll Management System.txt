@@ -1,0 +1,292 @@
+------Drop all the tables-----
+
+Drop table discount_rate cascade constraints;
+Drop table Message_table cascade constraints;
+Drop table Video_Bill cascade constraints;
+Drop table payment cascade constraints;
+Drop table trip cascade constraints;
+Drop table toll_rate cascade constraints;
+Drop table exit cascade constraints;
+Drop table road cascade constraints;
+Drop table vehicle cascade constraints;
+Drop table transponder cascade constraints;
+Drop table account cascade constraints;
+
+----------------------------------------------------------------------------------------------------------------------------------
+-------Drop and create all sequences----------
+
+
+drop sequence acc_seq ;
+create sequence acc_seq start with 15;
+
+drop sequence bill_id_sequence ;
+create sequence bill_id_sequence start with 500;
+
+drop sequence message_id_sequence ;
+create sequence message_id_sequence start with 150;
+
+drop sequence trip_id_sequence ;
+create sequence trip_id_sequence start with 1000;
+
+drop sequence pay_id_seq ;
+create sequence pay_id_seq start with 36606;
+
+create sequence vid_seq start with 360;
+drop sequence vid_seq;
+
+-----------------------------------------------------------------------------------------------------------------------------
+---Create tables----
+----Create table Account and Insert values------
+create table account(
+acc_id int,
+address varchar(50),
+email varchar(30),
+pwd varchar(20),
+acc_name varchar(30),
+balance int,
+primary key(acc_id)
+);
+
+Insert into account values (1,'5001 Westland blvd Arbutus','john@umbc.edu','john_123','John',300);
+Insert into account values (2,'371 Fernely Square Arbutus','mary@umbc.edu','mary_123','Mary',500);
+Insert into account values (3,'4802 Gateway terrace','chris@umbc.edu','chris_123','Chris',700);
+Insert into account values (4,'4823 Adgate Arbutus','ronald@umbc.edu','ronald_123','Ronald',400);
+Insert into account values (5,'3124 Wheaton way MD','Scott@umbc.edu','scott_123','Scott',1000);
+Insert into account values (9,'3124 Charlston place','shweta@umbc.edu','shweta_123','shweta',500);
+Insert into account values (10,'1527 park grove avenue','jackson@umbc.edu','jackson_123','jackson',5);
+Insert into account values (12,'2555 Westy blvd Arbutus','shru@umbc.edu','shru_123','Shru',300);
+Insert into account values (13,'7855 MIddletown Laurel','sush@umbc.edu','sush_123','Sush',100);
+insert into account values(14800, '5789 hilltop circle MD', 'preeti@umbc.edu', 'preeti_123', 'preeti', 725);
+Insert into account values (6,'8824 Charlton blvd','prac@umbc.edu','prac_123','prac',1000);
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+------------Create table Transponder and Insert values------
+create table transponder(
+trans_id int,
+acc_id int,
+primary key(trans_id),
+foreign key(acc_id) references account(acc_id)
+);
+
+Insert into transponder values(620,1);
+Insert into transponder values(601,2);
+Insert into transponder values(636,3);
+Insert into transponder values(651,4);
+Insert into transponder values(603,5);
+insert into transponder values(676,null); 
+Insert into transponder values(700,9);
+Insert into transponder values(710,10);
+Insert into transponder values(800,12);
+Insert into transponder values(900,13);
+insert into transponder values(778, 14800);
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+----------------Create table Vehicle and Insert values-----------
+
+create table vehicle(
+vehicle_id int,
+acc_id int,
+lic_plate_no varchar(20),
+state varchar(20),
+class int,
+address varchar(50),
+primary key(vehicle_id),
+foreign key(acc_id) references account(acc_id)
+);
+
+Insert into vehicle values(21,1,'AX215','Maryland',1,'5001 Westland blvd');
+Insert into vehicle values(22,2,'DZ235','Maryland',2,'537 Adlgate MD');
+Insert into vehicle values(23,3,'MX456','Maryland',1,'3124 Wheaton way MD');
+Insert into vehicle values(24,4,'DS555','Dallas',2,'371 Westland blvd');
+Insert into vehicle values(25,5,'CA501','California',1,'3123 Gateway Terrace');
+Insert into vehicle values(26,4,'DZ400','Maryland',2,'537 Adlgate MD');
+Insert into vehicle values(27,null,'OH4567','Ohio',1,'537 Terrain OH');
+Insert into vehicle values(30,9,'WA456','Washington',2,'14800 Wiscon WA');
+Insert into vehicle values(31,10,'JO1697','Florida',1,'1527 park grove avenue');
+Insert into vehicle values(40,12,'MD200','Maryland',1,'5001 Westland blvd');
+Insert into vehicle values(50,13,'MI789','Michigan',1,'3889 Michigan MH');
+insert into vehicle values(358, 14800, 'LW747', 'Maryland', 1, '567 hilltop circle MD');
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+----------------Create table road and Insert values-----------
+
+
+create table road(
+road_id varchar(20),
+road_name varchar(20),
+no_of_exits int,
+primary key(road_id)
+);
+
+Insert into road values('31','washington Ave',3);
+Insert into road values('32','Newyork Ave',4);
+Insert into road values('33','Carolina Ave',2);
+Insert into road values('34','Linden Ave',1);
+Insert into road values('35','Ellicot Ave',5);
+
+----------------------------------------------------------------------------------------------------------------------------------
+--------------------Create table Exit and Insert values---------
+
+create table exit(
+exit_no varchar(10),
+road_id varchar(20),
+exit_desc varchar(50),
+primary key(road_id,exit_no),
+foreign key(road_id) references road(road_id)
+);
+
+Insert into exit values('41A','31','This is exit1 for washington');
+Insert into exit values('41B','31','This is exit2 for washington');
+Insert into exit values('42B','32','This is exit3 for Newyork');
+Insert into exit values('42C','32','This isexit4 for Newyork');
+Insert into exit values('43C','33','This is exit1 for Carolina');
+Insert into exit values('43D','33','This is exit2 for Carolina');
+Insert into exit values('44D','34','This is exit1 for Linden');
+Insert into exit values('44E','34','This is  exit2 for Linden');
+Insert into exit values('45E','35','This is exit1 for Ellicot');
+Insert into exit values('45F','35','This is exit2 for Ellicot');
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+-----------------------Create table Toll_rate and insert values-------------
+
+create table toll_rate(
+road_id varchar(20),
+toll_start_time timestamp,
+toll_end_time timestamp,
+start_exit_id varchar(20),
+end_exit_id varchar(20),
+direction varchar(20),
+truck_toll_rate int,
+car_toll_rate int,
+primary key(road_id, start_exit_id, end_exit_id),
+foreign key(road_id) references road(road_id)
+);
+
+Insert into toll_rate values('31', timestamp'2018-10-01 6:00:00.00' , timestamp'2018-10-01 8:00:00.00', '41A', '41B', 'North Bound', 4, 8);
+Insert into toll_rate values('31', timestamp'2018-10-01 6:00:00.00' , timestamp'2018-10-01 8:00:00.00', '41B', '41A', 'South Bound', 4, 8);
+Insert into toll_rate values('31', timestamp'2018-10-01 9:00:00.00' , timestamp'2018-10-01 17:00:00.00', '41B', '41B', 'North Bound', 2, 5);
+Insert into toll_rate values('32', timestamp'2018-10-01 17:00:00.00' , timestamp'2018-10-01 20:00:00.00', '42B', '42C', 'North Bound', 4, 8);
+Insert into toll_rate values('32', timestamp'2018-10-01 10:00:00.00' , timestamp'2018-10-01 16:00:00.00', '42C', '42B', 'South Bound', 2, 5);
+Insert into toll_rate values('33', timestamp'2018-10-01 6:00:00.00' , timestamp'2018-10-01 8:00:00.00', '43D', '43C', 'South Bound', 4, 8);
+Insert into toll_rate values('33', timestamp'2018-10-05 6:00:00.00' , timestamp'2018-10-05 20:00:00.00', '43C', '43D', 'North Bound', 2, 5); 
+Insert into toll_rate values('31', timestamp'2018-10-03 9:00:00.00' , timestamp'2018-10-05 17:00:00.00', '43C', '43D', 'North Bound', 2, 5);
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+-----------------Create table Trip and Insert values-----------------
+
+create table trip(
+trip_id int,
+acc_id int,
+trans_id int,
+vehicle_id int,
+road_id varchar(20),
+start_exit_id varchar(20),
+end_exit_id varchar(20),
+enter_time timestamp,
+toll float,
+deducted float,
+status integer,
+primary key(trip_id),
+foreign key(trans_id) references transponder(trans_id),
+foreign key(acc_id) references account(acc_id),
+foreign key(vehicle_id) references vehicle(vehicle_id),
+foreign key(road_id) references road(road_id)
+);
+
+Insert into trip values(121, 1, 620,27,31, '41A','41B', timestamp'2018-10-01 11:00:00.00',4,1,1);
+Insert into trip values(122, 2, 601,22,32, '42B','42C', timestamp'2018-10-02 18:00:00.00',8,1,1);
+Insert into trip values(123, 2, 601,22,32, '42B','42C', timestamp'2018-10-03 18:00:00.00',8,1,2);
+Insert into trip values(124, 3, 636,25,33, '43D','43C', timestamp'2018-10-05 11:00:00.00',2,0,3);
+Insert into trip values(125, 4, 651,26,33, '43D','43C', timestamp'2018-10-05 11:00:00.00',2,0,2);
+Insert into trip values(126, 3, 636,25,33, '42B','42C', timestamp'2018-10-08 11:15:00.00',2,0,3);
+Insert into trip values(127, 2, 601,22,32, '42B','42C', timestamp'2018-10-06 11:00:00.00',8,1,3);
+Insert into trip values(129, null, 676,27,31, '43C','43D', timestamp'2018-10-03 6:00:00.00',0,1,3);
+Insert into trip values(130, 9, 700,30,32, '42B','42C', timestamp'2018-10-03 18:00:00.00',8,1,2);
+Insert into trip values(12, 10, 710,31,33, '43D','43C', timestamp'2018-10-04 15:00:00.00',8,0,3);
+Insert into trip values(128, 3, 636,25,33, '43D','43C', timestamp'2018-10-12 11:00:00.00',2,0,3);
+Insert into trip values(250, 12, 800,40,31, '41A','41B', timestamp'2018-10-06 11:00:00.00',4,1,1);
+Insert into trip values(350, 13, 900,50,31, '41A','41B', timestamp'2018-10-06 11:00:00.00',4,1,1);
+Insert into trip values(895, 14800, 778,358,31, '41A','41B', timestamp'2018-10-07 9:30:00.00',4,0,1);
+Insert into trip values(148, 9, 700,30,32, '42B','42C', timestamp'2018-10-01 06:00:00.00',4,1,2);
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+------------------Create table Payment and insert values----------------
+
+Create table payment(
+pymt_id int,
+amount int,
+pymt_date date,
+acc_id int,
+primary key(pymt_id),
+foreign key(acc_id) references account(acc_id)
+);
+
+Insert into payment values (636601,3.2,date '2018-10-01',1);
+Insert into payment values (636602,6.4,date '2018-10-02',2);
+Insert into payment values (636603,6.4,date '2018-10-03',2);
+Insert into payment values (636604,1.6,date '2018-10-05',4);
+Insert into payment values (636605,5.2,date '2018-10-08',3);
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+--------------------Create table Video_bill and insert values---------
+
+Create table Video_Bill(
+bill_id int,
+bill_date date,
+trip_id int,
+video_bill_status int,
+primary key(bill_id),
+foreign key(trip_id) references trip(trip_id)
+);
+
+Insert into Video_Bill values(350, date '2018-10-05',124,2);
+Insert into Video_Bill values(353, date '2018-10-08',126,3);
+Insert into Video_Bill values(354, date '2018-10-06',127,1);
+Insert into Video_Bill values(356, date '2018-10-07',129,1);
+Insert into Video_Bill values(355, date '2018-10-06',128,1);
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+-------------------------Create table Discount_rate and insert values------------
+
+Create table discount_rate(
+dis_rate float,
+video_toll float,
+admin_fees float
+);
+
+Insert into discount_rate values(0.8,1,2);
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+---------------------Create table Message_table and insert values------------
+
+Create table Message_table(
+message_id int,
+acc_id int,
+body_message varchar(50),
+message_time timestamp,
+primary key(message_id),
+foreign key(acc_id) references account(acc_id)
+);
+
+Insert into Message_Table values(101,1,'Bill generated for this acc',timestamp '2018-01-01 09:30:10');
+Insert into Message_Table values(102,2,'Bill generated for this acc',timestamp '2018-02-20 10:30:10');
+Insert into Message_Table values(103,3,'Insufficient Bal pls repelinsh',timestamp '2018-03-30 11:30:10');
+Insert into Message_Table values(104,4,'Insuff bal pls repelinsh',timestamp '2018-07-11 12:30:10');
+Insert into Message_Table values(105,5,'Bill generated for this acc',timestamp '2018-08-15 01:40:10');
+
+
+

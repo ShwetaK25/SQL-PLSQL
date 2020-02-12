@@ -1,0 +1,849 @@
+------------------------Procedures----------------------
+set serveroutput on;
+
+----------------Feature 1-------------------
+
+create or replace procedure addAccount(accname in varchar,e_mail in varchar,addr in varchar, pswd in varchar)is
+x int;
+begin 
+select count(*) into x from account where email=e_mail;
+if x=0 then
+--inserting new record
+insert into account values(acc_seq.nextval,addr,e_mail,pswd,accname,500);     ------calling sequence
+dbms_output.put_line('Account created');
+else
+dbms_output.put_line('Email already exists');
+end if;
+end;
+
+-- account created
+begin
+ addAccount('Susan','susan@umbc.edu','14800 4th street','susan_123');
+end;
+
+select * from account;
+
+--account already exists
+begin
+ addAccount('Susan','susan@umbc.edu','14800 4th street','susan_123');
+end;
+
+---------------------------------------------------------------------------------------
+----------------Feature 2-------------------
+
+Create or replace function login (e_mail in varchar,pswd in varchar) 
+return number
+IS
+v_email account.email%type;
+begin
+-----to check for invalid email and password
+select email into v_email from account where email=e_mail and pwd=pswd;   ---implicit cursor
+if v_email is not null then
+dbms_output.put_line('User has logged on');
+return 1;
+end if;
+exception
+	when no_data_found then
+	dbms_output.put_line('Invalid credentials');
+	return 0;
+end;
+
+-- User has logged on
+declare
+v_email varchar(20);
+begin
+v_email:=login('john@umbc.edu','john_123');
+dbms_output.put_line(v_email);
+end;
+
+-- invalid email id
+declare
+v_email varchar(20);
+begin
+v_email:=login('joh@umbc.edu','john_123');
+dbms_output.put_line(v_email);
+end;
+
+--invalid password
+declare
+v_email varchar(20);
+begin
+v_email:=login('john@umbc.edu','joh_123');
+dbms_output.put_line(v_email);
+end;
+
+---------------------------------------------------------------------------------------
+---------------------Feature 3-------------------
+
+create or replace procedure readMessage(acct_id in number, start_date in date)is
+--to fetch the message from message table for particular account
+cursor c1 is select body_message from message_table where trunc( message_time) > = start_date and acc_id=acct_id;----explicit cursor
+v_accid account.acc_id%type;
+begin
+select acc_id into v_accid from account where acc_id=acct_id;
+for r in c1
+loop
+dbms_output.put_line(r.body_message||',');
+end loop;
+exception when no_data_found then
+dbms_output.put_line('Account does not exist');
+end;
+
+--Account does not exist
+exec readMessage(222,date '2018-01-01');
+
+--Message is printed 
+exec readMessage(2,date '2018-01-01');
+----------------------------------------------------------------------------------
+--------------------Feature 4--------------------
+create or replace procedure addVehicle(acct_id in number, lic_no in varchar, v_state in varchar, v_addr in varchar, v_class in number)
+is
+x int;
+begin
+select count(*) into x from vehicle where lic_no=lic_plate_no and state=v_state and acc_id=acct_id;
+if x=0 then
+-------adding new vehicle to vehicle table------
+insert into vehicle values(vid_seq.nextval, acct_id, lic_no, v_state, v_class, v_addr);
+dbms_output.put_line('Vehicle successfully added!');
+else
+dbms_output.put_line('Vehicle already exists! Class and address are updated');
+update vehicle
+set class=v_class, address=v_addr
+where acct_id=acc_id;
+end if;
+end;
+
+----to add vehicle----
+begin
+addVehicle(14800, 'HD678', 'Maryland', '78823 gateway', 2);
+end;
+
+select * from vehicle;
+
+---vehicle already exists--
+
+begin
+addVehicle(1, 'AX215', 'Maryland', '4778 gateway', 2);
+end;
+
+-------------------Delete a vehicle-----
+
+
+create or replace procedure deleteVehicle(acct_id in number,lic_no in varchar, v_state in varchar) is
+v_vid vehicle.vehicle_id %type;
+x int;
+begin
+------implicit cursor to check if there are records with given account id
+select count(*) into x from vehicle where acct_id=acc_id and lic_plate_no=lic_no and state=v_state;
+--select vehicle_id into v_vid from vehicle where acct_id=acc_id;
+--dbms_output.put_line(x);
+if x =0 then
+dbms_output.put_line('Account id is invalid or license, state does not match');
+else 
+delete from video_bill where trip_id in(select trip_id from trip where vehicle_id=v_vid);
+delete from trip where vehicle_id=v_vid;
+delete from vehicle where acct_id=acc_id and lic_plate_no=lic_no and state=v_state;
+ dbms_output.put_line('Vehicle deleted');
+ dbms_output.put_line(v_vid);
+ end if;
+  end;
+  
+
+----------to delete vehicle----
+begin
+deleteVehicle(14800,'HD678','Maryland');
+end;
+
+select * from vehicle;
+-------Account id invalid
+begin
+deleteVehicle(344,'MX456','Maryland');
+end;
+
+------license plate invalid
+begin
+deleteVehicle(3,'vvvvv','Maryland');
+end;
+
+-----state invalid
+
+begin
+deleteVehicle(3,'MX456','dsjsdsd');
+end;
+
+-------------------------------------------------------------------------------------------
+-------------------Feature 5----------------------
+
+create or replace procedure addTransponder(trid in int,acct_id in int)
+is
+x int;
+begin
+-----implicit cursor to check if there are records with the given transponder id and account id
+select count(*) into x from transponder where trid=trans_id and acct_id=acc_id;
+if x=0 then
+insert into transponder values(trid, acct_id);
+dbms_output.put_line('Transponer successfully added!');
+else
+dbms_output.put_line('Transponder already exists');
+
+end if;
+end;
+
+-------Transponder successfully Added-------
+begin
+addTransponder(604,5);
+end;
+select * from transponder;
+
+-----------Transponder existing----------
+begin
+addTransponder(604,5);
+end;
+
+
+------To Delete transponder--------
+
+create or replace procedure deleteTransponder(trid in int,acct_id in int) is
+x int;
+begin
+select count(*) into x from transponder where acct_id=acc_id and trans_id=trid;
+if x=0 then
+dbms_output.put_line('Account id is invalid or transponder does not match');
+else 
+-----to delete the row from transonder table
+delete from transponder where trans_id=trid and acct_id=acc_id;
+ dbms_output.put_line('Transponder deleted');
+ end if;
+end;
+
+
+-----------Delete transponder-------
+begin
+deleteTransponder(604,5);
+end;
+
+select * from transponder;
+
+-----------Invalid account-------
+begin
+deleteTransponder(620,5);
+end;
+
+-----------Invalid transponder-------
+begin
+deleteTransponder(621,1);
+end;
+
+-------------------------------------------------------------------------------------------
+---------------------Feature 6------------
+
+create or replace procedure matchAccount(transp_id in number, lic_no in varchar, v_state in varchar, vehc_id out int, acct_id out int, v_status out int)
+is
+---------explicit cursor to return account id ,vehicle id and status when transponder is found
+cursor c1 is select vehicle.acc_id,vehicle.vehicle_id,trip.status from vehicle,trip,transponder 
+where transponder.trans_id=trip.trans_id and vehicle.vehicle_id=trip.vehicle_id and transponder.trans_id=transp_id and vehicle.lic_plate_no=lic_no
+and vehicle.state=v_state;
+
+-------------------explicit cursor to locate vehicle id using state and license plate number---
+cursor c3 is select transponder.acc_id,trip.status,vehicle.lic_plate_no,vehicle.state
+from transponder, trip,vehicle where transponder.ACC_ID=vehicle.ACC_ID and trip.vehicle_id=vehicle.vehicle_id and transponder.TRANS_ID=transp_id;
+
+
+-------when account id is null, explicit cursor to locate vehicle id using state and license plate number---
+cursor c4 is select trip.acc_id,trip.vehicle_id,trip.STATUS from transponder,vehicle,trip where vehicle.vehicle_id=trip.vehicle_id
+and transponder.TRANS_ID=transp_id  and transponder. acc_id is null and lic_plate_no=lic_no and state=v_state;
+
+begin
+
+open c1;
+loop
+fetch c1 into acct_id,vehc_id,v_status;
+exit when c1%notfound;
+dbms_output.put_line('Account ID- '||' '||acct_id||' '||'Vehicle ID- '||' '||vehc_id||'Status- '||' '||v_status);
+end loop;
+close c1;
+
+if transp_id is null then
+select vehicle.vehicle_id into vehc_id from vehicle
+where  vehicle.LIC_PLATE_NO=lic_no and vehicle.state=v_state;
+if vehc_id is not null then
+select trip.ACC_ID,trip.STATUS into acct_id,v_status from  trip
+where  trip.VEHICLE_ID=vehc_id;
+dbms_output.put_line('Account ID '||acct_id||' '||'Vehicle ID '||' '||vehc_id||'Status '||v_status);
+end if;
+end if;
+
+for r in c3
+loop 
+if (r.lic_plate_no=lic_no and r.state=v_state) then
+dbms_output.put_line('Transponder  is matching!'||'Account ID - '||' '||r.acc_id||' '||'Status- '||' '||r.status);
+dbms_output.put_line('License plate no and state is matching ');
+else
+dbms_output.put_line('Vehicle not associated with the account, either liscense plate no or state is not matching');
+end if;
+end loop;
+
+for r in c4 
+loop
+if r.acc_id is null then
+dbms_output.put_line('Vehicle id found using liscense plate no and state- '||r.vehicle_id);
+dbms_output.put_line('Vehicle not registered to any account- '||'Vehicle ID- '||r.vehicle_id||' '||'Status- '||' '||r.status);
+end if;
+end loop;
+end;
+
+--transponder id null by user input
+declare
+a_id int;
+v_id int;
+out_status int;
+begin
+matchAccount(null,'DZ400','Maryland', v_id, a_id, out_status);
+end;
+
+--Matching transponder ID
+declare
+a_id int;
+v_id int;
+out_status int;
+begin
+matchAccount(800,'MD200','Maryland', v_id, a_id, out_status);
+end;
+
+--invalid liscence plate no
+declare
+a_id int;
+v_id int;
+out_status int;
+begin
+matchAccount(601,'DZ25','Maryland', v_id, a_id, out_status);
+end;
+
+--state is invalid
+declare
+a_id int;
+v_id int;
+out_status int;
+begin
+matchAccount(601,'DZ235','california', v_id, a_id, out_status);
+end;
+
+--account id is null
+declare
+a_id int;
+v_id int;
+out_status int;
+begin
+matchAccount(676,'OH4567','Ohio', v_id, a_id, out_status);
+dbms_output.put_line('Account ID- '||' '||a_id||' '|| 'vehicle_id' || ' ' || v_id|| 'status' || ' ' || out_status );
+end;
+
+-------------------------------------------------------------------------------------------
+---------------Feature 7-------------------
+
+Create or replace procedure compute_Toll(transp_id in integer,lic_plate_number in varchar,state1 in varchar,
+road_id1 in varchar,start_exit_id1 in varchar,end_exit_id1 in varchar,enter_time1 in timestamp, final_toll out integer) 
+IS
+s_time timestamp;
+e_time timestamp;
+vehicle_class integer;
+total_toll integer;
+ac_id integer;
+--final_toll integer;
+drate integer;
+trip_status1 integer;
+afees integer;
+vrate integer;
+vid integer;
+status1 integer;
+tripid_new integer;
+BEGIN
+
+-----calling feature 6 to look up the account id----
+matchAccount(transp_id , lic_plate_number, state1,vid,ac_id,status1);
+tripid_new:=trip_id_sequence.nextval;
+
+dbms_output.put_line('vehicle id ' ||vid||'acct id'||ac_id||'status'||status1);
+
+-----insert new trip into trip table with the values returned by feature 6----
+insert into trip values(tripid_new,ac_id,transp_id ,vid, road_id1 ,start_exit_id1,end_exit_id1 ,enter_time1,0,0,status1);
+
+
+------calculating total toll according to the status and the class of the vehicle-------
+Select toll_start_time,toll_end_time into s_time,e_time from toll_rate where road_id= road_id1 and start_exit_id=start_exit_id1 and end_exit_id=end_exit_id1 ;
+select class into vehicle_class from vehicle where vehicle_id=vid;
+dbms_output.put_line('vehicle class'||vehicle_class);
+if (enter_time1> s_time) and (enter_time1<e_time) then
+dbms_output.put_line('enter time'||s_time);
+dbms_output.put_line('exit time'||e_time);
+  if vehicle_class = 1 then
+     select sum(car_toll_rate) into total_toll from toll_rate where road_id=road_id1 and start_exit_id=start_exit_id1 and end_exit_id=end_exit_id1 ;
+     dbms_output.put_line('car toll rate'||total_toll);
+     
+ elsif vehicle_class=2 then
+     select sum(truck_toll_rate) into total_toll from toll_rate where road_id=road_id1 and start_exit_id=start_exit_id1 and end_exit_id=end_exit_id1 ;
+     dbms_output.put_line('truck toll rate'||total_toll);
+end if;
+
+
+-----implicit cursor to retrieve the status of the trip and calculating the final toll using the values in the discount_rate table-------
+select status into trip_status1 from trip where vehicle_id = vid and acc_id=ac_id and trip_id=tripid_new;
+dbms_output.put_line('status '||trip_status1);
+select dis_rate,admin_fees,video_toll into drate,afees,vrate from discount_rate;
+if trip_status1=1 or trip_status1=2 then
+  final_toll:=total_toll * drate ;
+  dbms_output.put_line('final_toll '||final_toll);
+elsif trip_status1=3 then
+  final_toll:=(total_toll * vrate) +afees;
+end if; 
+end if;
+update trip set toll=final_toll where trip_id=tripid_new;
+dbms_output.put_line('Computed toll is'||final_toll);
+exception
+	when no_data_found then
+		dbms_output.put_line('No data found');
+        when too_many_rows then
+        dbms_output.put_line('too many rows returned');
+end;
+
+declare
+t_toll number;
+Begin
+compute_Toll (900,'MI789','Michigan',31, '41A','41B',timestamp'2018-10-01 6:30:00.00', t_toll);
+	dbms_output.put_line('total toll ' || t_toll );
+End;
+
+select * from trip;
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+--------------------Feature 8-------------------------
+
+Create or replace 
+	PROCEDURE deductToll (tripid1 in integer,transp_id in integer,lic_plate_number in varchar,state1 in varchar,
+road_id1 in varchar,start_exit_id1 in varchar,end_exit_id1 in varchar,enter_time1 in timestamp)
+as
+ded_toll integer;
+deduct_trip trip.deducted%type;
+bal integer;
+ac_id  integer;
+trip_status1 integer;
+BEGIN
+
+select deducted into deduct_trip from trip where TRIP_ID=tripid1;
+select status, deducted into trip_status1, deduct_trip  from trip where  trip.trip_id=tripid1;
+
+
+----calling feature 7 to compute the toll---
+compute_Toll(transp_id,lic_plate_number,state1,
+road_id1,start_exit_id1,end_exit_id1,enter_time1,ded_toll);
+
+if deduct_trip =1 then      ------checking if the trip's toll has already been deducted--
+    dbms_output.put_line('toll has been deducted');
+else
+  if trip_status1=1 or trip_status1=2 then     
+  select balance,trip.acc_id into bal,ac_id from account,trip where trip.trip_id=tripid1 and account.acc_id =trip.acc_id;
+    if bal>= ded_toll then    ----checking if the balance in the account is more than the toll charged
+      update account set balance= (balance - ded_toll) where acc_id=ac_id;
+      update trip set deducted=1 where acc_id=ac_id and trip_id=tripid1 ;
+    else
+      select balance,trip.acc_id into bal,ac_id from account,trip where trip.trip_id=tripid1 and account.acc_id =trip.acc_id;
+      update trip set status=3 where trip.trip_id=tripid1;
+   compute_Toll(transp_id,lic_plate_number,state1,road_id1,start_exit_id1,end_exit_id1,enter_time1, ded_toll);
+      update trip set toll= ded_toll where trip_id=tripid1;
+      insert into video_bill values(bill_id_sequence.nextval,sysdate,tripid1,1);
+      insert into message_table values(message_id_sequence.nextval,ac_id,'Insuff bal pls repelinsh',systimestamp);
+      end if;
+    elsif trip_status1=3 then
+---------generating video bill since license plate is not linked to the account---
+insert into video_bill values(bill_id_sequence.nextval,sysdate,tripid1,1);
+end if;
+end if;
+end;
+
+
+-----------toll has been deducted------
+
+begin
+deductToll (148,700,'WA456','Washington',32,'42B','42C',timestamp '2018-10-01 18:00:00.00');
+end;
+
+select * from trip;
+
+---------enough balance in account-----------
+update trip set deducted=0 where trip_id=122;
+
+begin
+deductToll (122,601,'DZ235','Maryland',32,'42B','42C',timestamp '2018-10-01 18:00:00.00');
+end;
+
+select * from trip;
+select * from account;
+-----------insufficient balance in account------
+delete from video_bill where trip_id=12;
+update trip set status=2 where trip_id=12;
+
+begin
+deductToll (12,710,'JO1697','Florida',33,'43D','43C',timestamp '2018-10-05 7:00:00.00');
+end;
+
+select * from video_bill;
+select * from MESSAGE_TABLE;
+
+-----------generate video bill when status=3---------------------
+update trip set deducted=0 where trip_id=129;
+
+begin
+deductToll (129,676,'OH4567','Ohio',31,'43C','43D',timestamp '2018-10-05 07:00:00.00');
+end;
+
+select * from video_bill;
+
+----------------------------------------------------------------------------------------------------------
+--------------------Feature 9-------------------------
+Create or replace 
+	PROCEDURE makePayment(ac_id in int, amt in int) IS
+x int;
+BEGIN
+select count(*) into x from account where ac_id=acc_id;
+if x=0 then
+dbms_output.put_line('not able to find account. account id might be invalid');
+else
+-------inserting values into the payment and message table indicating that the user has paid the bill------
+insert into payment values(pay_id_seq.nextval, amt, sysdate, ac_id);
+insert into message_table values(message_id_sequence.nextval, ac_id, 'payment has been received',systimestamp);
+dbms_output.put_line('payment done');
+end if;
+end;
+
+----valid account----
+Begin
+makePayment(6,4);
+End;
+
+select * from payment;
+select * from message_table;
+
+----invalid account------
+Begin
+makePayment(1555,4);
+End;
+
+
+-------------------------------------------------------------------------------------------------------------
+---------------------------Feature 10--------------------
+Create or replace 
+	PROCEDURE updateBill(bill_id1 in int, status in int) IS
+x int;
+BEGIN
+select count(*) into x from video_bill where bill_id1=bill_id;
+if x=0 then
+dbms_output.put_line('bill id is invalid');
+else
+
+---updating the status of the video_bill table---
+if status =2 or status=3 then
+update video_bill set 
+video_bill_status=status;
+dbms_output.put_line('bill status is updated');
+end if;
+end if;
+end;
+
+-----------Bill status is updated----
+begin
+updateBill(350, 2);
+end;
+
+select * from video_bill;
+------invalid bill_id------
+begin
+updateBill(444, 2);
+end;
+
+---------------------------------------------------------------------------------------------------------------
+
+---------------------------------Feature 11--------------------------
+
+create or replace procedure display_trips(account_id in int, start_date in date, end_date in date)
+is
+
+---explicit cursor to retrive the details of trips and payment given the account id and date range---
+cursor c1 is select tr.trans_id, t.trip_id, v.lic_plate_no, r.road_name, t.start_exit_id, t.end_exit_id, t.enter_time, t.toll, p.amount, p.pymt_date
+from trip t, road r, vehicle v, transponder tr, payment p
+where
+tr.acc_id=account_id and
+trunc(t.enter_time)>=start_date and 
+trunc(t.enter_time)<=end_date and
+t.acc_id=tr.acc_id and
+t.vehicle_id=v.vehicle_id and
+r.road_id=t.road_id and 
+p.acc_id=t.acc_id;
+v_acc_id int;
+begin
+select acc_id into v_acc_id from account where acc_id=account_id;
+for item in c1 loop
+dbms_output.put_line('----------------------------------------------------------');
+dbms_output.put_line('trip details are:');
+dbms_output.put_line('Transponder ID - '|| item.trans_id);
+dbms_output.put_line('License plate Number - '|| item.lic_plate_no);
+dbms_output.put_line('Road Name - '|| item.road_name);
+dbms_output.put_line('Enter Exit ID - '|| item.start_exit_id);
+dbms_output.put_line('Exiting Exit ID - '|| item.end_exit_id);
+dbms_output.put_line('Entrance time - '|| item.enter_time);
+dbms_output.put_line('Toll - '|| item.toll);
+dbms_output.put_line('payment  details are:');
+dbms_output.put_line('Payment date - ' || item.pymt_date);
+dbms_output.put_line('Payment amount - ' || item.amount);
+end loop;
+exception
+when no_data_found then
+dbms_output.put_line('invalid account');
+end;
+
+------------display trips and payment------------------
+exec display_trips(4, date'2018-10-01', date'2018-10-10');
+
+-----------invalid account--------------
+exec display_trips(454, date'2018-10-01', date'2018-10-10');
+
+----------------------------------------------------------------------------------------------------------
+
+--------------------Feature 12-----------------------------
+
+create or replace procedure monthly_statement(v_account_id number, v_last_statement_date date)
+AS
+--FETCHING TRIP FOR ACCOUNT IN REQUIRED DATE RANGE IN CURSOR C1
+cursor c1 is 	
+select toll from trip where trip.acc_id =v_account_id
+and  trunc(trip.enter_time) >=  v_last_statement_date 
+and trunc(trip.enter_time) <=  v_last_statement_date + INTERVAL '1' MONTH;
+
+
+----FETCHING TRIP FOR ACCOUNT IN REQUIRED DATE RANGE IN CURSOR C2
+cursor C2 is 
+select amount from payment where acc_id =v_account_id					
+and  payment.pymt_date >=  v_last_statement_date
+and  payment.pymt_date <=  v_last_statement_date + INTERVAL '1' MONTH;
+
+total_toll number;
+total_payment_amount number;
+v_aid number;
+
+begin																				
+
+total_toll := 0;
+total_payment_amount :=0;
+
+---CALLING FEATURE 11 'STATEMENT' BY GIVING ACCOUNT ID AND DATE RANGE
+display_trips(v_account_id, v_last_statement_date, v_last_statement_date + INTERVAL '1' month);		
+
+
+--IMPLICIT CURSOR TO CHECK IF ACCOUNT EXISTS	
+select acc_id into v_aid from account where acc_id = v_account_id ;	
+
+--LOOP TO CALCULATE TOTAL TOLL				
+for r in c1																		
+loop
+total_toll:= total_toll + r.toll;
+end loop;
+dbms_output.put_line('total toll'||total_toll);
+
+--LOOP TO CALCULATE TOTAL PAYMENT AMOUNT
+for r in c2		
+loop
+total_payment_amount:=total_payment_amount + r.amount;
+end loop;
+
+dbms_output.put_line('Total toll to be paid for one month after last payment date ' || v_last_statement_date || ' IS '|| total_toll);		--TOTAL TOLL OUTPUT STATEMENT
+dbms_output.put_line('Total payment to be paid for one month after last payment date ' || v_last_statement_date || ' IS '|| total_payment_amount);	--TOTAL PAYMENT OUTPUT STATEMENT
+
+exception
+when no_data_found																		--EXCEPTION HANDLING FOR NO ACCOUNT
+then dbms_output.put_line('No such account');
+end;		
+
+---------Monthly statement--------
+exec monthly_statement(4, DATE '2018-10-01');
+
+---------Invalid account--------------
+exec monthly_statement(1110, DATE '2018-10-01');
+
+-------------------------------------------------------------------------------------------------
+----------------------Feature 13-------------------
+
+create or replace procedure date_range(entertime_range1 in date,entertime_range2 in date)is
+---------explicit cursor to retrieve road name,total toll and total trips for a given date range
+cursor c1 is
+select a.road_name, a.Total_toll,a.Total_trips from
+(select a.acc_id,r.road_name, sum(t.toll) as  Total_toll,count(t.trip_id) as  Total_trips from road r, trip t,account a where trunc(t.enter_time)>=entertime_range1
+and trunc(t.enter_time)<=entertime_range2 and r.road_id=t.road_id and t.acc_id=a.acc_id
+group by r.road_name,t.toll,a.acc_id
+order by t.toll desc)a;
+v_rname road.road_name%type;
+v_totaltoll trip.toll%type;
+v_totaltrip trip.trip_id%type;
+begin
+open c1;
+loop
+fetch c1 into v_rname,v_totaltoll,v_totaltrip;
+exit when c1%notfound;
+dbms_output.put_line('Road names,Total tolls and Total trips for a given date range is -'||v_rname||' '||v_totaltoll||' '||v_totaltrip);
+end loop;
+close c1;
+end;
+
+------------display details for  a given date range------------
+exec date_range(date '2018-10-01',date '2018-10-03');
+
+----------------------------------------------------------------------------------------------------
+--------------------Feature 14-----------------------
+
+
+create or replace procedure no_of_trips(entertime_range1 in date,entertime_range2 in date,road_no in number)is
+-----------explicit cursor to retrive total trips and direction for a given date range and road ID---------
+cursor c1 is
+Select a.totaltrips,a.direction from(
+select count(trip_id) as totaltrips,t.start_exit_id,tr.direction
+from trip t,toll_rate tr where trunc(t.enter_time)>=entertime_range1 and trunc(t.enter_time)<=entertime_range2 and t.road_id=road_no
+and t.road_id=tr.road_id and t.start_exit_id=tr.start_exit_id 
+group by t.start_exit_id,tr.direction
+union all
+select count(trip_id) as totaltrips,t.end_exit_id,tr.direction
+from trip t,toll_rate tr where trunc(t.enter_time)>=entertime_range1 and trunc(t.enter_time)<=entertime_range2 and t.road_id=road_no
+and t.road_id=tr.road_id and t.END_EXIT_ID=tr.end_exit_id
+group by t.end_exit_id,tr.direction)a
+order by totaltrips desc;
+
+v_direction toll_rate.direction%type; 
+v_roadid ROAD.ROAD_ID%type;
+v_totaltrip trip.trip_id%type;
+begin
+select road_id into v_roadid from road where road_id=road_no;
+open c1;
+loop
+fetch c1 into v_totaltrip,v_direction;
+exit when c1%notfound;
+dbms_output.put_line('Total trips for a given date range is:'||v_totaltrip||' '||'Direction: '||v_direction);
+end loop;
+close c1;
+exception when no_data_found then
+dbms_output.put_line('Road id does not exist');
+end;
+
+--Total trips
+begin
+ no_of_trips(date '2018-10-01',date '2018-10-10',33);
+end;
+
+-- invalid road id
+begin
+ no_of_trips(date '2018-10-04',date '2018-10-06',40);
+end;
+
+
+---------------------------------------------------------------------------------------------
+------------------Feature 15---------------------
+create or replace procedure display_k_trips(start_date in date, end_date in date, k in integer)
+is
+
+---explicit cursor to print most toll for top k accounts-----
+cursor c1 is select sum(toll), acc_id from trip where trunc(enter_time)>=start_date and trunc(enter_time)<=end_date group by acc_id order by (sum(toll)) desc;
+
+---explicit cursor to print most trips for top k accounts-----
+cursor c2 is select count(trip_id), acc_id  from trip where trunc(enter_time)>=date'2018-10-01' and trunc(enter_time)<=date'2018-10-10' group by acc_id order by (count(trip_id)) desc;
+
+---explicit cursor to print vhehicle id with highest number of video toll bills-----
+cursor c3 is select sum(toll), vehicle_id  from trip where status=2 or status=3 and trunc(enter_time)>=date'2018-10-01' and trunc(enter_time)<=date'2018-10-10' group by vehicle_id order by (sum(toll)) desc;
+
+---explicit cursor to print vhehicle id highest total amount of toll for video toll bill-----
+cursor c4 is select count(trip_id), vehicle_id  from trip where status=2 or status=3 and trunc(enter_time)>=date'2018-10-01' and trunc(enter_time)<=date'2018-10-10' group by vehicle_id order by (sum(toll)) desc;
+x integer;
+v_id integer;
+ac_id integer;
+i integer;
+begin
+open c1;
+i:=0;
+dbms_output.put_line('top '||k||' accounts with most toll');
+dbms_output.put_line('acc id' || ' | ' || 'toll');
+loop
+fetch c1 into x, ac_id;
+dbms_output.put_line(ac_id || '      |        ' || x);
+i:=i+1;
+exit when c1%notfound or i=k;
+end loop;
+close c1;
+
+
+dbms_output.put_line('--------------------------------------------');
+open c2;
+i:=0;
+dbms_output.put_line('top '||k||' accounts with most trips made');
+dbms_output.put_line('acc id' || ' |  ' || 'no of trips');
+loop
+fetch c2 into x, ac_id;
+dbms_output.put_line(ac_id || '        |         ' || x);
+i:=i+1;
+exit when c2%notfound or i=k;
+end loop;
+close c2;
+
+
+dbms_output.put_line('--------------------------------------------');
+open c3;
+i:=0;
+dbms_output.put_line('top '||k||' accounts with the highest total amount of toll for video toll bill');
+dbms_output.put_line('vehicle id' || ' | ' || 'video toll');
+loop
+fetch c3 into x, v_id;
+dbms_output.put_line(v_id || '       |     ' || x);
+i:=i+1;
+exit when c3%notfound or i=k;
+end loop;
+close c3;
+
+
+dbms_output.put_line('--------------------------------------------');
+open c4;
+i:=0;
+dbms_output.put_line('top '||k||' accounts with the highest number of video toll bill');
+dbms_output.put_line('vehicle id' || '| ' || 'no of video toll');
+loop
+fetch c4 into x, v_id;
+dbms_output.put_line(v_id || '      |     ' || x);
+i:=i+1;
+exit when c4%notfound or i=k;
+end loop;
+close c4;
+end;
+
+--------display details for given date range and no of rows------
+exec display_k_trips(date'2018-10-01', date '2018-10-10',2);
+
+-----------------------------------------------------------------------------------------------------
+-----------------Feature 16----------------------------
+create or replace procedure vehicle_pair(v_start_date date, v_end_date date)
+as
+----------explicit cursor to retrieve pairs of vehicles that travel at approximately similar time and similar route------------------------
+cursor c1 is
+select  t2.vehicle_id  as Vehicle_ID,  t2.road_id as Road_ID,  t2.start_exit_id as Start_exit_ID,  t2.end_exit_id as End_exit_ID,  t2.enter_time as Enter_Time 
+from trip t1, trip t2
+where t1.trip_id<>t2.trip_id								--self join on trip table 
+--and t2.vehicle_id>t1.vehicle_id
+and t1.road_id=t2.road_id
+and t1.enter_time=t2.enter_time
+and t1.start_exit_id = t2.start_exit_id
+and t1.end_exit_id =t2.end_exit_id
+and t1.enter_time>= v_start_date
+and t1.enter_time<= v_end_date
+and TO_NUMBER(TO_CHAR (extract(minute from t2.enter_time - t1.enter_time) ))< 30;	
+begin
+for r in c1
+loop
+dbms_output.put_line(' Vehicle  ID ' || r.Vehicle_ID ||' Road ID '|| r.Road_ID ||' Start Exit ID ' || r.Start_exit_ID || ' End Exit ID ' ||  r.End_exit_ID||' Vehicle Enter Time '||  r.Enter_Time);
+end loop;
+end; 
+
+-------to display details for a given date range---
+exec vehicle_pair(date '2018-10-06', date '2018-10-07');
